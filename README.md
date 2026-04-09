@@ -1,6 +1,6 @@
-# 3D Calculus Visualizer
+# Math Visualizer
 
-An interactive desktop application for visualising multivariable functions **f(x, y)** — their surfaces, partial derivatives, antiderivatives, and gradient fields — with a smooth dark-theme GUI.
+An interactive desktop application for exploring both **calculus** and **coordinate geometry** concepts with a smooth dark-theme GUI.
 
 ---
 
@@ -8,10 +8,11 @@ An interactive desktop application for visualising multivariable functions **f(x
 
 | Feature | Details |
 |---|---|
-| **Any f(x,y)** | Type any expression using `x`, `y`, `sin`, `cos`, `exp`, `log`, `sqrt`, … |
-| **6 view modes** | Original surface, ∂f/∂x, ∂f/∂y, ∫f dx, Gradient overlay, Wireframe |
-| **9 presets** | Paraboloid, Saddle, Gaussian, Monkey Saddle, Peaks, and more |
-| **Symbolic engine** | SymPy computes exact derivatives and antiderivatives |
+| **Two math domains** | Switch between Calculus and Coordinate Geometry from the top bar |
+| **Calculus mode** | Plot `f(x,y)`, partial derivatives, antiderivatives, gradients, and wireframes |
+| **Coordinate Geometry mode** | Explore implicit relations `F(x,y)=0`, slope maps, tangent fields, normal fields, and intercepts |
+| **Rich presets** | Includes classic surfaces plus lines, circles, ellipses, parabolas, hyperbolas, and more |
+| **Symbolic engine** | SymPy computes derivatives, antiderivatives, implicit slope, relation type, and intercepts |
 | **Interactive sliders** | Adjust X/Y domain, step size, and transparency live |
 | **6 colourmaps** | plasma, viridis, coolwarm, magma, turbo, inferno |
 | **Gradient arrows** | Quiver plot showing ∇f on the surface |
@@ -26,7 +27,7 @@ An interactive desktop application for visualising multivariable functions **f(x
 
 ```bash
 # 1. Clone / download the project
-cd 3D_Calculus_Visualizer
+cd calviz
 
 # 2. Install dependencies (Python 3.10+)
 pip install -r requirements.txt
@@ -40,11 +41,12 @@ python main.py
 ## Project Structure
 
 ```
-3D_Calculus_Visualizer/
+calviz/
 ├── main.py          # Entry point
 ├── calculus.py      # SymPy parsing, differentiation, integration, lambdify
-├── surfaces.py      # Meshgrid generation, plot helpers, animation frames
-├── gui.py           # Tkinter GUI + embedded Matplotlib canvas
+├── coordinate_geometry.py  # Implicit relation parsing + conic analysis
+├── surfaces.py      # 2-D/3-D plot helpers and animation frames
+├── gui.py           # Tkinter GUI + domain switcher + embedded Matplotlib canvas
 ├── requirements.txt
 └── README.md
 ```
@@ -53,7 +55,9 @@ python main.py
 
 ## Expression Syntax
 
-Use standard Python / SymPy math syntax:
+Use standard Python / SymPy math syntax.
+
+Calculus examples:
 
 | Math | Type |
 |---|---|
@@ -66,14 +70,24 @@ Use standard Python / SymPy math syntax:
 Supported functions: `sin cos tan asin acos atan exp log ln sqrt Abs sinh cosh tanh ceiling floor`  
 Constants: `pi`, `e` / `E`
 
+Coordinate geometry examples:
+
+| Relation | Type |
+|---|---|
+| x² + y² = 9 | `x**2 + y**2 = 9` |
+| y = x² | `y - x**2 = 0` |
+| x²/9 + y²/4 = 1 | `x**2/9 + y**2/4 = 1` |
+| 2x - y - 3 = 0 | `2*x - y - 3 = 0` |
+
 ---
 
 ## Controls
 
 - **Sliders** – drag to update domain or transparency; click **Plot / Refresh** to redraw
-- **View tabs** – click any tab to switch the active surface without re-parsing
-- **Presets** – click any preset name to instantly load a famous surface
-- **Animate Morph** – watch the surface interpolate from f to ∂f/∂x in a ping-pong loop
+- **Domain switch** – toggle between Calculus and Coordinate Geometry from the top bar
+- **View tabs** – click any tab to switch the active view within the current domain
+- **Presets** – click any preset name to instantly load a relevant example for the current domain
+- **Animate Morph** – watch the plot interpolate between two symbolic views of the active domain
 - **Stop Animation** – halts the animation and restores interactive rotation
 - **Save Image** – opens a file dialog; supports PNG, SVG, PDF
 - **Matplotlib toolbar** – pan, zoom, home, and rotate via the toolbar below the canvas
