@@ -3,6 +3,7 @@ gui.py
 Full Tkinter GUI for switching between calculus and coordinate geometry views.
 """
 
+import queue
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -14,9 +15,11 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import sympy as sp
 
+from chat_panel import ChatPanel
 from calculus import CalcEngine
 from coordinate_geometry import CoordinateGeometryEngine
 import surfaces as sf
+import viz_bus
 
 
 BG = "#0f0f1a"
@@ -101,7 +104,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.configure(bg=BG)
-        self.minsize(1100, 720)
+        self.minsize(1440, 720)
         self.resizable(True, True)
 
         self.engines = {
@@ -118,9 +121,11 @@ class App(tk.Tk):
         self.current_view = self.current_views[self.current_domain]
         self._anim = None
         self._frame_data = []
+        self._viz_queue = viz_bus.subscribe()
 
         self._build_ui()
         self._set_domain("calculus", initial=True)
+        self._poll_bus()
 
     def _build_ui(self):
         top = tk.Frame(self, bg=PANEL, height=54)
@@ -160,8 +165,18 @@ class App(tk.Tk):
         main = tk.Frame(self, bg=BG)
         main.pack(fill="both", expand=True)
 
+        chat_col = tk.Frame(main, bg=PANEL, width=330)
+        chat_col.pack(fill="y", side="left", padx=(8, 4), pady=8)
+        chat_col.pack_propagate(False)
+        self.chat_panel = ChatPanel(
+            chat_col,
+            on_status=self._status,
+            on_error=lambda msg: self._status(msg, error=True),
+        )
+        self.chat_panel.pack(fill="both", expand=True)
+
         left = tk.Frame(main, bg=PANEL, width=310)
-        left.pack(fill="y", side="left", padx=(8, 4), pady=8)
+        left.pack(fill="y", side="left", padx=(4, 4), pady=8)
         left.pack_propagate(False)
 
         right = tk.Frame(main, bg=BG)
@@ -404,6 +419,33 @@ class App(tk.Tk):
         self.eq_var.set(expr)
         self.domain_exprs[self.current_domain] = expr
         self._plot()
+
+    def _poll_bus(self):
+        try:
+            payload = self._viz_queue.get_nowait()
+            self._apply_llm_payload(payload)
+        except queue.Empty:
+            pass
+        self.after(200, self._poll_bus)
+
+    def _apply_llm_payload(self, payload):
+        """Load a Colab-emitted payload into the visualizer."""
+        if self.current_domain != "calculus":
+            self._set_domain("calculus")
+
+        self.eq_var.set(payload.equation)
+        self.domain_exprs["calculus"] = payload.equation
+        self._sliders["x_min"].set(payload.x_range[0])
+        self._sliders["x_max"].set(payload.x_range[1])
+        self._sliders["y_min"].set(payload.y_range[0])
+        self._sliders["y_max"].set(payload.y_range[1])
+        self._sliders["step"].set(payload.step)
+        self.current_view = "surface"
+        self.current_views["calculus"] = "surface"
+        self._highlight_tab("surface")
+        self._plot()
+        self._status(f"Loaded: {payload.concept_title}")
+        self.chat_panel.render_explanation(payload)
 
     def _parse(self) -> bool:
         expr = self.eq_var.get().strip()
